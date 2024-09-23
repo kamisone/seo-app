@@ -1,0 +1,46 @@
+name: CI
+on:
+  push:
+    branches: [main]
+
+
+jobs:
+  seo-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v2
+      
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        npm i
+
+    - name: build project
+      run: |
+        npm run build
+
+    - name: Install seo tools
+      run: |
+        npm install -g http-server lighthouse
+      
+    - name: Serve project
+      run: |
+        http-server ./build -p 8080 &
+
+    - name: Run SEO Audit
+      run: |
+        lighthouse http://localhost:8080 --output json --output-path ./seo-report.json --only-categories=seo --chrome-flags="--headless"
+    
+    - name: Check LIghthouse Score
+      run: |
+        SCORE=$(jq '.categories.seo.score' ./seo-report.json)
+        if [ "$SCORE" -lt 0.90 ]; then
+          echo "SEO score is below threshold!" && exit 1
+        fi
