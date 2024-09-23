@@ -41,7 +41,11 @@ jobs:
     - name: Check LIghthouse Score
       run: |
         SCORE=$(jq '.categories.seo.score' ./seo-report.json)
-        echo $SCORE
-        if [ "$SCORE" -lt 0.90 ]; then
-          echo "SEO score is below threshold!" && exit 1
+        SCORE=$(echo $SCORE | bc)
+        THRESHOLD=0.9
+        if (( $(echo "$SCORE < $THRESHOLD" | bc -l) )); then
+          echo "SEO score is below threshold ($THRESHOLD): $SCORE"
+          exit 1
+        else
+          echo "SEO score is above threshold ($THRESHOLD): $SCORE"
         fi
